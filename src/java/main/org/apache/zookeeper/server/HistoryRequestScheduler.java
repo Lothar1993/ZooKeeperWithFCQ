@@ -61,7 +61,19 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
 	if (this.history < 1) {
 		throw new IllegalArgumentException("historylength must be at least 1");
 	}
-    this.thresholds = this.parseThresholds();
+    String hold = System.getProperty(THRESHOLDS."100,1000");
+	  String[] holds = hold.split(",");
+	  thresholds = new int[holds.length];
+	  for(int i = 0; i < holds.length; i++){
+	  	this.threholds[i] = Integer.parseInt(holds[i]);
+	  }
+	  if(this.thresholds.length == 0) {
+	  	this.thresholds = greDefaultThresholds(numQueues, this.historyLehgth);
+	  }else if (this.thresholds.length != this.numQueues -1) {
+	  	throw new IllegalArgumentException(
+			THRESHOLD + "must specify exactly " + (this.numQueues -1) + " weights: one for each priority level"
+		);
+	  }
 
     LOG.info("HistoryReuqestScheduler is being used.");
   }
