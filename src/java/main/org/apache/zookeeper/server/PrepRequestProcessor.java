@@ -101,14 +101,15 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
             LOG.info("zookeeper.skipACL==\"yes\", ACL checks will be skipped");
         }
     }
-
+    static final String QUEUECAPACITY = "zookeeper.queue.capacity";
+    static int queueCapacity = Integer.parseInt(QUEUECAPACITY);
     /**
      * this is only for testing purposes.
      * should never be useed otherwise
      */
     private static  boolean failCreate = false;
 
-    LinkedBlockingQueue<Request> submittedRequests = new LinkedBlockingQueue<Request>();
+    Callqueue<Request> submittedRequests = new FairCallQueue(queueCapacity);
 
     private final RequestProcessor nextProcessor;
 
@@ -1001,13 +1002,21 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
     }
 
     public void processRequest(Request request) {
-        submittedRequests.add(request);
+        try{
+                submittedRequest.put(request);
+        }catch(InterruptedException e){
+                LOG.error("Unexcepted error when queue request", e);
+        }
     }
 
     public void shutdown() {
         LOG.info("Shutting down");
         submittedRequests.clear();
-        submittedRequests.add(Request.requestOfDeath);
+        try{
+                submittedRequest.put(Request.requestOfDeath);
+        }catch(InterruptedException e){
+                LOG.error("Unexcepted error when queue request", e);
+        }
         nextProcessor.shutdown();
     }
 }
