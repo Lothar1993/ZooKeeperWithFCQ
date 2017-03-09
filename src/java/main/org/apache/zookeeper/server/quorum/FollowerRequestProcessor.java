@@ -38,12 +38,14 @@ import org.slf4j.LoggerFactory;
 public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
         RequestProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(FollowerRequestProcessor.class);
-
+    static final String QUEUECAPACITY = "zookeeper.queue.capacity";
+    static int queueCapacity = Integer.parseInt(QUEUECAPACITY);
+        
     FollowerZooKeeperServer zks;
 
     RequestProcessor nextProcessor;
 
-    LinkedBlockingQueue<Request> queuedRequests = new LinkedBlockingQueue<Request>();
+    CallQueue<Request> queuedRequests = new FairCallQueue(queueCapacity);
 
     boolean finished = false;
 
@@ -128,10 +130,14 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
             } catch (IOException ie) {
                 LOG.error("Unexpected error in upgrade", ie);
             }
-            if (upgradeRequest != null) {
-                queuedRequests.add(upgradeRequest);
+            try{
+                    if (upgradeRequest != null) {
+                        queuedRequests.put(upgradeRequest);
+                        }
+            queuedRequests.put(request);
+            } catch (InterruptedException e) {
+                LOG.error("Unexcepted error in upgrade");
             }
-            queuedRequests.add(request);
         }
     }
 
@@ -139,7 +145,11 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
         LOG.info("Shutting down");
         finished = true;
         queuedRequests.clear();
-        queuedRequests.add(Request.requestOfDeath);
+        try{
+                submittedRequest.put(Request.requestOfDeath);
+        }catch(InterruptedException e){
+                LOG.error("Unexcepted error when queue request", e);
+        }
         nextProcessor.shutdown();
     }
 
