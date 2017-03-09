@@ -102,7 +102,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
         }
     }
     static final String QUEUECAPACITY = "zookeeper.queue.capacity";
-    static int queueCapacity = Integer.parseInt(QUEUECAPACITY);
+    static int queueCapacity = Integer.getInteger(QUEUECAPACITY, 100000);
     /**
      * this is only for testing purposes.
      * should never be useed otherwise
