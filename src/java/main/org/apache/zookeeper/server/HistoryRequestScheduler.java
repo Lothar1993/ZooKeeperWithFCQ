@@ -173,6 +173,9 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
   @Override
   public int getPriorityLevel(Request req) {
     // Strict priority: the service user will always be scheduled into queue 0
+	  if(null == req.cnxn || null == req.cnxn.getRemoteSocketAddress()){
+	  	return 0;
+	  }
 	InetAdress identity = req.cnxn.getRemoteSocketAddress().getAddress();
     if (identity == null) {
       return 0;
