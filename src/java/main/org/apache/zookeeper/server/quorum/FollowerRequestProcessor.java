@@ -39,7 +39,7 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
         RequestProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(FollowerRequestProcessor.class);
     static final String QUEUECAPACITY = "zookeeper.queue.capacity";
-    static int queueCapacity = Integer.parseInt(QUEUECAPACITY);
+    static int queueCapacity = Integer.getInteger(QUEUECAPACITY, 100000);
         
     FollowerZooKeeperServer zks;
 
