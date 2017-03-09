@@ -36,8 +36,9 @@ public class WeightedRoundRobinMultiplexer {
     assert aNumQueues > 0;
 
     this.numQueues = aNumQueues;
-    String weight = System.getProperty(CALL_QUEUE_WEIGHT);
+    String weight = System.getProperty(CALL_QUEUE_WEIGHT, "1000,100,10");
 	String[] weights = weight.split(",");
+	 queueWeights = new int[weights.length];
 	for(int i = 0; i < weights.length; i++ ){
 		this.queueWeights[i] = Integer.parseInt(weights[i]);
 	}
