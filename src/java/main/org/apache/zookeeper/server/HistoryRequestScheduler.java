@@ -57,7 +57,7 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
       throw new IllegalArgumentException("Number of queues must be positive.");
     }
 
-    this.historyLength = Integer.getInteger(HISTORY_LENGTH, 1000);
+    this.historyLength = Integer.getInteger(HISTORY_LENGTH, 10000);
 	if (this.history < 1) {
 		throw new IllegalArgumentException("historylength must be at least 1");
 	}
