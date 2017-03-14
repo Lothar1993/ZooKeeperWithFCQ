@@ -23,6 +23,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.OpCode;
+import org.apache.zookeeper.server.CallQueue;
+import org.apache.zookeeper.server.FairCallQueue;
 import org.apache.zookeeper.server.Request;
 import org.apache.zookeeper.server.RequestProcessor;
 import org.apache.zookeeper.server.ZooKeeperCriticalThread;
@@ -45,7 +47,7 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
 
     RequestProcessor nextProcessor;
 
-    CallQueue<Request> queuedRequests = new FairCallQueue(queueCapacity);
+    CallQueue queuedRequests = new FairCallQueue(queueCapacity);
 
     boolean finished = false;
 
@@ -146,7 +148,7 @@ public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
         finished = true;
         queuedRequests.clear();
         try{
-                submittedRequest.put(Request.requestOfDeath);
+        	queuedRequests.put(Request.requestOfDeath);
         }catch(InterruptedException e){
                 LOG.error("Unexcepted error when queue request", e);
         }

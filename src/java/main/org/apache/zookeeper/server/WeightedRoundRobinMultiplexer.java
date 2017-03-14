@@ -1,10 +1,7 @@
-package org.apache.hadoop.ipc;
+package org.apache.zookeeper.server;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_WRRMUX_WEIGHTS_KEY;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** 
  * Determines which queue to start reading from, occasionally drawing from
@@ -20,8 +17,8 @@ import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_WRRMUX_
  * This class is NOT thread safe.
  */
 public class WeightedRoundRobinMultiplexer {
-  public static final Log LOG = 
-    LogFactory.getLog(WeightedRoundRobinMultiplexer.class);
+  public static final Logger LOG = 
+    LoggerFactory.getLogger(WeightedRoundRobinMultiplexer.class);
 
 	static final String CALL_QUEUE_WEIGHT = "zookeeper.callqueue.weight";
 	
@@ -46,9 +43,8 @@ public class WeightedRoundRobinMultiplexer {
     if (this.queueWeights.length == 0) {
       this.queueWeights = getDefaultQueueWeights(this.numQueues);
     } else if (this.queueWeights.length != this.numQueues) {
-      throw new IllegalArgumentException(ns  "."  
-        IPC_CALLQUEUE_WRRMUX_WEIGHTS_KEY  " must specify exactly "  
-        this.numQueues  " weights: one for each priority level.");
+      throw new IllegalArgumentException(CALL_QUEUE_WEIGHT + " must specify exactly " +  
+        this.numQueues + " weights: one for each priority level.");
     }
 
     this.currentQueueIndex = 0;
@@ -73,7 +69,7 @@ public class WeightedRoundRobinMultiplexer {
 
   private void moveToNextQueue() {
     // Move to next queue, wrapping around if necessary
-    this.currentQueueIndex = this.currentQueueIndex  1;
+    this.currentQueueIndex = this.currentQueueIndex + 1;
     if (this.currentQueueIndex == this.numQueues) {
       // We should roll around back to 0
       this.currentQueueIndex = 0;

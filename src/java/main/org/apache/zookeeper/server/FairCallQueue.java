@@ -1,27 +1,19 @@
-packge org.apache.zookeeper.server;
+package org.apache.zookeeper.server;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.metrics2.util.MBeans;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_PRIORITY_LEVELS_KEY;
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_PRIORITY_LEVELS_DEFAULT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * A queue with multiple levels for each priority.
  */
-public class FairCallQueue implements CallQueue, FairCallQueueMXBean {
-  public static final Log LOG = LogFactory.getLog(FairCallQueue.class);
+public class FairCallQueue implements CallQueue  {
+  public static final Logger LOG = LoggerFactory.getLogger(FairCallQueue.class);
 
   static final String QUEUENUM = "zookeeper.callqueue.queuenum";
 
@@ -48,21 +40,21 @@ public class FairCallQueue implements CallQueue, FairCallQueueMXBean {
   }
 
   public FairCallQueue(int capacity) {
-    int numQueues = this.parseNumQueues(ns, conf);
-    LOG.info("FairCallQueue is in use with "  numQueues  " queues.");
+    int numQueues = this.parseNumQueues();
+    LOG.info("FairCallQueue is in use with " + numQueues + " queues.");
 
     this.queues = new ArrayList<LinkedBlockingQueue<Request>>(numQueues);
-    for(int i=0; i < numQueues; i) {
+    for(int i=0; i < numQueues; i++) {
       this.queues.add(new LinkedBlockingQueue<Request>(capacity));
     }
 
-    this.scheduler = new HistoryRequestScheduler(numQueues, ns, conf);
-    this.mux = new WeightedRoundRobinMultiplexer(numQueues, ns, conf);
+    this.scheduler = new HistoryRequestScheduler(numQueues);
+    this.mux = new WeightedRoundRobinMultiplexer(numQueues);
 
     assert this.queues.size() == numQueues;
   }
 
-  private int parseNumQueues(String ns, Configuration conf) {
+  private int parseNumQueues() {
     int retval = Integer.getInteger(QUEUENUM,3);
     if(retval < 1) {
       throw new IllegalArgumentException("numQueues must be at least 1");
@@ -89,6 +81,7 @@ public class FairCallQueue implements CallQueue, FairCallQueueMXBean {
    * Get an element from the head, blocking if none exists.
    * @throws InterruptedException
    */
+  @Override
   public Request take() throws InterruptedException {
     takeLock.lockInterruptibly();
     try {
@@ -116,7 +109,7 @@ public class FairCallQueue implements CallQueue, FairCallQueueMXBean {
    */
   private LinkedBlockingQueue<Request> getFirstNonEmptyQueue(int queueIdx) {
     // Return the first non-empty queue
-    for(int i=queueIdx; i < this.queues.size(); i) {
+    for(int i=queueIdx; i < this.queues.size(); i++) {
       LinkedBlockingQueue<Request> queue = this.queues.get(i);
       if (queue.size() != 0) {
         return queue;
@@ -145,7 +138,7 @@ public class FairCallQueue implements CallQueue, FairCallQueueMXBean {
    */
   public int[] sizes() {
     int[] ret = new int[this.queues.size()];
-    for(int i=0; i < ret.length; i) {
+    for(int i=0; i < ret.length; i++) {
       ret[i] = this.queues.get(i).size();
     }
     return ret;

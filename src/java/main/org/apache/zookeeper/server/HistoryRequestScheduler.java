@@ -1,36 +1,20 @@
 package org.apache.zookeeper.server;
 
-import java.lang.StringBuilder;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Iterator;
+import java.net.InetAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.metrics2.util.MBeans;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import org.apache.hadoop.fs.CommonConfigurationKeys;
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_HISTORYSCHEDULER_SERVICE_USERS_KEY;
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_HISTORYSCHEDULER_THRESHOLDS_KEY;
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_HISTORYSCHEDULER_HISTLENGTH_KEY;
-import static org.apache.hadoop.fs.CommonConfigurationKeys.IPC_CALLQUEUE_HISTORYSCHEDULER_HISTLENGTH_DEFAULT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** 
  * A simple scheduler that prioritizes rare users over heavy users.
  *
  * This class is thread safe.
  */
-public class HistoryReuqestScheduler implements ReuqestScheduler {
-  public static final Log LOG = LogFactory.getLog(HistoryReuqestScheduler.class);
+public class HistoryRequestScheduler implements RequestScheduler {
+  public static final Logger LOG = LoggerFactory.getLogger(HistoryRequestScheduler.class);
 
   // These support computing Reuqest call priority
   private final ConcurrentHashMap<Object, AtomicInteger> callHistoryCounts;
@@ -44,12 +28,12 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
   private int[] thresholds;
   private int numQueues;
 
-  public HistoryReuqestScheduler() {
+  public HistoryRequestScheduler() {
     this.callHistory = new ConcurrentLinkedQueue<Object>();
     this.callHistoryCounts = new ConcurrentHashMap<Object, AtomicInteger>();
   }
 
-  public HistoryReuqestScheduler(int numQueues) {
+  public HistoryRequestScheduler(int numQueues) {
     this();
 
     this.numQueues = numQueues;
@@ -58,40 +42,26 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
     }
 
     this.historyLength = Integer.getInteger(HISTORY_LENGTH, 10000);
-	if (this.history < 1) {
+	if (this.historyLength < 1) {
 		throw new IllegalArgumentException("historylength must be at least 1");
 	}
-    String hold = System.getProperty(THRESHOLDS."100,1000");
+    String hold = System.getProperty(THRESHOLDS, "100,1000");
 	  String[] holds = hold.split(",");
 	  thresholds = new int[holds.length];
 	  for(int i = 0; i < holds.length; i++){
-	  	this.threholds[i] = Integer.parseInt(holds[i]);
+	  	this.thresholds[i] = Integer.parseInt(holds[i]);
 	  }
 	  if(this.thresholds.length == 0) {
-	  	this.thresholds = greDefaultThresholds(numQueues, this.historyLehgth);
+	  	this.thresholds = getDefaultThresholds(numQueues, this.historyLength);
 	  }else if (this.thresholds.length != this.numQueues -1) {
 	  	throw new IllegalArgumentException(
-			THRESHOLD + "must specify exactly " + (this.numQueues -1) + " weights: one for each priority level"
+			THRESHOLDS + "must specify exactly " + (this.numQueues -1) + " weights: one for each priority level"
 		);
 	  }
 
     LOG.info("HistoryReuqestScheduler is being used.");
   }
 
-
-  private int[] parseThresholds(String ns, Configuration conf, int aNumQueues,
-    int aHistoryLength) {
-    int[] retval = conf.getInts(ns  "." 
-      IPC_CALLQUEUE_HISTORYSCHEDULER_THRESHOLDS_KEY);
-
-    if (retval.length == 0) {
-      return this.getDefaultThresholds(aNumQueues, aHistoryLength);
-    } else if (retval.length != aNumQueues-1) {
-      throw new IllegalArgumentException("Number of thresholds should be " 
-        (aNumQueues-1)  ". Was: "  retval.length);
-    }
-    return retval;
-  }
 
   /** 
    * If not provided by the user, thresholds are generated as even slices of
@@ -105,8 +75,8 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
     int[] retval = new int[aNumQueues-1];
     int delta = aHistoryLength / aNumQueues;
 
-    for(int i=0; i < retval.length; i) {
-      retval[i] = (i  1) * delta;
+    for(int i=0; i < retval.length; i++) {
+      retval[i] = (i + 1) * delta;
     }
 
     return retval;
@@ -188,7 +158,7 @@ public class HistoryReuqestScheduler implements ReuqestScheduler {
 	  if(null == req.cnxn || null == req.cnxn.getRemoteSocketAddress()){
 	  	return 0;
 	  }
-	InetAdress identity = req.cnxn.getRemoteSocketAddress().getAddress();
+	InetAddress identity = req.cnxn.getRemoteSocketAddress().getAddress();
     if (identity == null) {
       return 0;
     }

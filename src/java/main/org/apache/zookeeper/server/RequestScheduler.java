@@ -1,0 +1,5 @@
+package org.apache.zookeeper.server;
+
+public interface RequestScheduler {
+    public int getPriorityLevel(Request req);
+}

@@ -109,7 +109,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
      */
     private static  boolean failCreate = false;
 
-    Callqueue<Request> submittedRequests = new FairCallQueue(queueCapacity);
+    CallQueue submittedRequests = new FairCallQueue(queueCapacity);
 
     private final RequestProcessor nextProcessor;
 
@@ -1003,7 +1003,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
 
     public void processRequest(Request request) {
         try{
-                submittedRequest.put(request);
+        	submittedRequests.put(request);
         }catch(InterruptedException e){
                 LOG.error("Unexcepted error when queue request", e);
         }
@@ -1013,7 +1013,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
         LOG.info("Shutting down");
         submittedRequests.clear();
         try{
-                submittedRequest.put(Request.requestOfDeath);
+        	submittedRequests.put(Request.requestOfDeath);
         }catch(InterruptedException e){
                 LOG.error("Unexcepted error when queue request", e);
         }
